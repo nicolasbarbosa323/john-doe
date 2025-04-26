@@ -422,6 +422,111 @@ end
 end
 chara.Torso.CFrame = CFrame.new(pos.X,pos.Y,pos.Z)
 end
+--nothing--
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+
+local player = Players.LocalPlayer
+local char = player.Character or player.CharacterAdded:Wait()
+local humanoid = char:WaitForChild("Humanoid")
+
+local animation = Instance.new("Animation")
+animation.AnimationId = "rbxassetid://204328711"
+
+-- Função de punição (sem roupas, sem acessórios, fica preta e remove o Humanoid)
+local function punishPlayer(victimChar)
+	-- Fica preta
+	local humanoidRootPart = victimChar:FindFirstChild("HumanoidRootPart")
+	if humanoidRootPart then
+		humanoidRootPart.Color = Color3.new(0, 0, 0)
+	end
+
+	-- Remove acessórios e roupas
+	for _, accessory in pairs(victimChar:GetChildren()) do
+		if accessory:IsA("Accessory") then
+			accessory:Destroy()  -- Remove acessórios
+		end
+	end
+
+	-- Remove roupas (camisa e calças)
+	local shirt = victimChar:FindFirstChildOfClass("Shirt")
+	local pants = victimChar:FindFirstChildOfClass("Pants")
+	if shirt then shirt:Destroy() end
+	if pants then pants:Destroy() end
+
+	-- Torna a vítima invisível (sem parts visíveis)
+	for _, part in pairs(victimChar:GetChildren()) do
+		if part:IsA("BasePart") then
+			part.Transparency = 1
+			part.CanCollide = false
+		end
+	end
+
+	-- Fica preta
+	local humanoidRootPart = victimChar:FindFirstChild("HumanoidRootPart")
+	if humanoidRootPart then
+		humanoidRootPart.Color = Color3.new(0, 0, 0)
+	end
+
+	-- Remove o Humanoid da vítima (inviabiliza ela no jogo)
+	local victimHumanoid = victimChar:FindFirstChildOfClass("Humanoid")
+	if victimHumanoid then
+		victimHumanoid:Destroy()  -- Remove o Humanoid para deixar a vítima jogável
+	end
+	
+	-- Remove o outro Humanoid (caso tenha)
+	local victimHumanoidRootPart = victimChar:FindFirstChild("HumanoidRootPart")
+	if victimHumanoidRootPart then
+		local secondHumanoid = victimChar:FindFirstChildOfClass("Humanoid")
+		if secondHumanoid then
+			secondHumanoid:Destroy()
+		end
+	end
+end
+
+-- Cria a zona de punição
+local function createPunishZone(position)
+	local zone = Instance.new("Part", workspace)
+	zone.Size = Vector3.new(6, 1, 6)
+	zone.Anchored = true
+	zone.CanCollide = false
+	zone.Transparency = 0.7
+	zone.BrickColor = BrickColor.new("Really red")
+	zone.Material = Enum.Material.Neon
+	zone.Position = position + Vector3.new(0, 0.5, 0)
+
+	-- Aplica punição em quem encostar
+	zone.Touched:Connect(function(hit)
+		local victimChar = hit.Parent
+		if victimChar ~= char and victimChar:FindFirstChildOfClass("Humanoid") then
+			punishPlayer(victimChar)  -- Aplica a punição
+		end
+	end)
+
+	-- Remove a zona após 10 segundos
+	game.Debris:AddItem(zone, 10)
+end
+
+-- Atalho Z
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.C then
+		local root = char:FindFirstChild("HumanoidRootPart")
+		if not root then return end
+
+		-- Cria zona de punição onde você está
+		createPunishZone(root.Position)
+
+		-- Executa a animação 4 vezes, parando a cada 0.3s
+		for i = 1, 4 do
+			local track = humanoid:LoadAnimation(animation)
+			track:Play()
+			wait(0.3)
+			track:Stop()
+			wait(0.1)
+		end
+	end
+end)
 
 --Grab--
 function Grab(mouse)

@@ -479,7 +479,7 @@ local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 
 local animation = Instance.new("Animation")
-animation.AnimationId = "rbxassetid://204328711"
+animation.AnimationId = "rbxassetid://Put u code here"
 
 -- Função de punição (sem roupas, sem acessórios, fica preta e remove o Humanoid)
 local function punishPlayer(victimChar)

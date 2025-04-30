@@ -46,6 +46,69 @@ if player.Character then
     setupDeathMessage(player.Character)
 end
 
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local originalFOV = Camera.FieldOfView
+local originalWalkSpeed = 16
+local espParts = {}
+
+function createESP(target)
+    if target:FindFirstChild("HumanoidRootPart") and not espParts[target] then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = target
+        highlight.FillColor = Color3.new(1, 1, 0) -- Amarelo
+        highlight.OutlineTransparency = 1
+        highlight.FillTransparency = 0.3
+        highlight.Parent = target
+        espParts[target] = highlight
+    end
+end
+
+function removeAllESP()
+    for _, highlight in pairs(espParts) do
+        if highlight and highlight.Parent then
+            highlight:Destroy()
+        end
+    end
+    espParts = {}
+end
+
+-- Detecta tecla "C"
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.V then
+        -- Muda FOV e velocidade
+        originalFOV = Camera.FieldOfView
+        originalWalkSpeed = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") and LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed or 16
+        Camera.FieldOfView = 14
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 6
+        end
+
+        -- Espera 0.7s
+        wait(0.7)
+
+        -- Aplica ESP
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                createESP(player.Character)
+            end
+        end
+
+        -- Espera 2s e restaura tudo
+        wait(2)
+        Camera.FieldOfView = originalFOV
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = originalWalkSpeed
+        end
+        removeAllESP()
+    end
+end)
+
+
 ------------
 --John Doe--
 ------------
@@ -479,7 +542,7 @@ local char = player.Character or player.CharacterAdded:Wait()
 local humanoid = char:WaitForChild("Humanoid")
 
 local animation = Instance.new("Animation")
-animation.AnimationId = "rbxassetid://Put u code here"
+animation.AnimationId = "rbxassetid://0"
 
 -- Função de punição (sem roupas, sem acessórios, fica preta e remove o Humanoid)
 local function punishPlayer(victimChar)
@@ -771,3 +834,65 @@ if player.Character then
     addRedLight(player.Character)
 end
 player.CharacterAdded:Connect(addRedLight)
+
+
+
+-- SCRIPT DE FOV + ESP COM TECLA V
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
+
+local originalFOV = Camera.FieldOfView
+local originalWalkSpeed = 16
+local espParts = {}
+
+function createESP(target)
+    if target:FindFirstChild("HumanoidRootPart") and not espParts[target] then
+        local highlight = Instance.new("Highlight")
+        highlight.Adornee = target
+        highlight.FillColor = Color3.new(1, 1, 0) -- Amarelo
+        highlight.OutlineTransparency = 1
+        highlight.FillTransparency = 0.3
+        highlight.Parent = target
+        espParts[target] = highlight
+    end
+end
+
+function removeAllESP()
+    for _, highlight in pairs(espParts) do
+        if highlight and highlight.Parent then
+            highlight:Destroy()
+        end
+    end
+    espParts = {}
+end
+
+game:GetService("UserInputService").InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.V then
+        -- Muda FOV e velocidade
+        originalFOV = Camera.FieldOfView
+        originalWalkSpeed = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") and LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed or 16
+        Camera.FieldOfView = 14
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 6
+        end
+
+        wait(0.7)
+
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character then
+                createESP(player.Character)
+            end
+        end
+
+        wait(2)
+        Camera.FieldOfView = originalFOV
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid") then
+            LocalPlayer.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = originalWalkSpeed
+        end
+        removeAllESP()
+    end
+end)
+

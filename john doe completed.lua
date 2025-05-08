@@ -96,6 +96,114 @@ task.delay(3, function()
 	text2.ZIndex = 4
 end)
 
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+local myChar = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+
+-- Cria o som
+local sound = Instance.new("Sound", workspace)
+sound.SoundId = "rbxassetid://105804403990611"
+sound.Looped = true
+sound.Volume = 5
+
+local currentSegment = nil
+local playing = false
+local fadeDuration = 0.3  -- Tempo para a transição de volume (em segundos)
+
+-- Função para reduzir o volume (fade out)
+function fadeOutSound()
+    local startVolume = sound.Volume
+    local elapsed = 0
+
+    while elapsed < fadeDuration do
+        sound.Volume = startVolume * (1 - elapsed / fadeDuration)
+        elapsed = elapsed + 0.1
+        task.wait(0.1)
+    end
+    sound.Volume = 0
+end
+
+-- Função para aumentar o volume (fade in)
+function fadeInSound()
+    sound.Volume = 0
+    local targetVolume = 5  -- Volume final após a transição
+    local elapsed = 0
+
+    while elapsed < fadeDuration do
+        sound.Volume = (elapsed / fadeDuration) * targetVolume
+        elapsed = elapsed + 0.1
+        task.wait(0.1)
+    end
+    sound.Volume = targetVolume
+end
+
+-- Função para tocar o segmento da música
+function playSegment(startTime, endTime)
+    if currentSegment == startTime then return end
+    currentSegment = startTime
+
+    -- Fazer a transição suave para o próximo segmento
+    task.spawn(function()
+        if playing then
+            -- Espera o fadeOut acabar antes de tocar o novo segmento
+            fadeOutSound()
+        end
+
+        -- Muda a posição do som e espera o fadeOut terminar antes de continuar
+        sound.TimePosition = startTime
+        fadeInSound()
+
+        if not sound.IsPlaying then sound:Play() end
+        playing = true
+    end)
+end
+
+-- Função para encontrar o jogador mais próximo
+function getNearestPlayer()
+    local minDist = math.huge
+    local closest = nil
+
+    for _, player in pairs(Players:GetPlayers()) do
+        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and myChar:FindFirstChild("HumanoidRootPart") then
+            local dist = (myChar.HumanoidRootPart.Position - player.Character.HumanoidRootPart.Position).Magnitude
+            if dist < minDist then
+                minDist = dist
+                closest = player
+            end
+        end
+    end
+    return closest, minDist
+end
+
+task.spawn(function()
+    while true do
+        myChar = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+        local target, dist = getNearestPlayer()
+
+        -- Verifica se o som deve ser pausado ou tocado em diferentes segmentos com base na distância
+        if not target or not dist or dist >= 30 then
+            if playing then
+                fadeOutSound()
+                sound:Pause()
+                playing = false
+                currentSegment = nil
+            end
+        elseif dist >= 25 and dist < 30 then
+            playSegment(0, 9)
+        elseif dist >= 20 and dist < 25 then
+            playSegment(9, 19)
+        elseif dist >= 15 and dist < 20 then
+            playSegment(19, 39)
+        elseif dist < 15 then
+            playSegment(39, sound.TimeLength)
+        end
+
+        -- Espera antes de verificar novamente
+        task.wait(0.5)
+    end
+end)
+
+
 -- Quando a música terminar, limpa tudo
 music.Ended:Connect(function()
 	local gui = player:FindFirstChild("PlayerGui"):FindFirstChild("JohnDoeCinematic")
@@ -466,8 +574,8 @@ slashsnd = New("Sound",chara.Torso,"Slash",{SoundId = "rbxassetid://0",PlaybackS
 hitsnd = New("Sound",chara.Torso,"Hit",{SoundId = "rbxassetid://429400881",PlaybackSpeed = .7,Volume = 5})
 telesnd = New("Sound",chara.Torso,"Tele",{SoundId = "rbxassetid://2767090",PlaybackSpeed = .7,Volume = 5})
 burnsnd = New("Sound",chara.Torso,"Burn",{SoundId = "rbxassetid://32791565",PlaybackSpeed = .7,Volume = 5})
-music1 = New("Sound",chara.Torso,"Music1",{SoundId = "rbxassetid://105804403990611",PlaybackSpeed = 1,Volume = 10,Looped = true})
-music2 = New("Sound",chara.Torso,"Music2",{SoundId = "rbxassetid://11984351",PlaybackSpeed = .2,Volume = 5,Looped = true})
+music1 = New("Sound",chara.Torso,"Music1",{SoundId = "rbxassetid://",PlaybackSpeed = 1,Volume = 10,Looped = true})
+music2 = New("Sound",chara.Torso,"Music2",{SoundId = "rbxassetid://",PlaybackSpeed = .2,Volume = 5,Looped = true})
 deathmus = New("Sound",chara.Torso,"DeathMus",{SoundId = "rbxassetid://19094700",PlaybackSpeed = .2,Volume = 9,Looped = true})
 deathex = New("Sound",chara.Torso,"DeathEx",{SoundId = "rbxassetid://11984351",PlaybackSpeed = 1,Volume = 5})
 music1:Play()

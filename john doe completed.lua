@@ -215,6 +215,116 @@ music.Ended:Connect(function()
 	end
 end)
 
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+
+local podeUsar = true
+
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.E and podeUsar then
+        podeUsar = false
+
+        local char = player.Character or player.CharacterAdded:Wait()
+        local humanoid = char:FindFirstChildOfClass("Humanoid")
+        local root = char:FindFirstChild("HumanoidRootPart")
+        if not humanoid or not root then return end
+
+        -- Iniciar animação travada
+        local anim = Instance.new("Animation")
+        anim.AnimationId = "rbxassetid://204062532"
+        local track = humanoid:LoadAnimation(anim)
+        track.Looped = false
+        track:Play()
+        track.TimePosition = 0.7
+        track:AdjustSpeed(0)
+
+        local animDescongelada = false
+        local fixAnim = RunService.RenderStepped:Connect(function()
+            if not animDescongelada and track.IsPlaying then
+                track.TimePosition = 0.7
+            elseif animDescongelada then
+                fixAnim:Disconnect()
+            end
+        end)
+
+        humanoid.WalkSpeed = 35
+        local moveDir = root.CFrame.LookVector
+        local startTime = tick()
+        local hitAlguem = false
+        local cancelado = false
+
+        -- Conexões de toque
+        local conns = {}
+        for _, part in ipairs(char:GetDescendants()) do
+            if part:IsA("BasePart") then
+                local conn = part.Touched:Connect(function(hit)
+                    if cancelado then return end
+
+                    local victim = hit:FindFirstAncestorOfClass("Model")
+                    if victim and victim ~= char then
+                        local victimHumanoid = victim:FindFirstChildOfClass("Humanoid")
+                        if victimHumanoid and victimHumanoid.Health > 0 then
+                            victimHumanoid:TakeDamage(100)
+                            hitAlguem = true
+                            animDescongelada = true
+                            track:AdjustSpeed(1)  -- Descongela a animação
+                            humanoid.WalkSpeed = 15  -- Para de andar automaticamente
+                            cancelado = true -- Impede mais movimento
+                            track:Stop()  -- Para a animação
+                        end
+                    else
+                        -- Verifica se é uma parede (não chão)
+                        local hitNormal = hit.CFrame.UpVector
+                        local vertical = math.abs(hitNormal.Y)
+                        if vertical < 0.5 then
+                            cancelado = true
+                            humanoid:TakeDamage(5)
+                            humanoid.WalkSpeed = 15
+                            track:Stop()
+                            fixAnim:Disconnect()
+                            for _, conn in ipairs(conns) do
+                                conn:Disconnect()
+                            end
+                        end
+                    end
+                end)
+                table.insert(conns, conn)
+            end
+        end
+
+        -- Movimento automático por 5 segundos
+        local moveConnection
+        moveConnection = RunService.Heartbeat:Connect(function()
+            if cancelado then
+                moveConnection:Disconnect()
+                return
+            end
+            if tick() - startTime <= 5 then
+                root.Velocity = moveDir * humanoid.WalkSpeed
+            else
+                moveConnection:Disconnect()
+                if not hitAlguem then
+                    humanoid.WalkSpeed = 15
+                    track:Stop()
+                    fixAnim:Disconnect()
+                end
+                for _, conn in ipairs(conns) do
+                    conn:Disconnect()
+                end
+            end
+        end)
+
+        -- Resetar botão após 6 segundos
+        task.delay(6, function()
+            podeUsar = true
+        end)
+    end
+end)
+
+
 -- Mostrar "I'M FREE FINALLY" quando morrer
 local player = game.Players.LocalPlayer
 

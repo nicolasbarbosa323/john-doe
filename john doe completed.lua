@@ -1,32 +1,111 @@
--- Função que escreve letra por letra usando Hint
-local function typeHintMessage(message)
-    for i = 1, #message do
-        local hint = Instance.new("Hint")
-        hint.Text = string.sub(message, 1, i)
-        hint.Parent = game.CoreGui
-        wait(0.1)
-        hint:Destroy()
-    end
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local SoundService = game:GetService("SoundService")
+local RunService = game:GetService("RunService")
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
 
-    local finalHint = Instance.new("Hint")
-    finalHint.Text = message
-    finalHint.Parent = game.CoreGui
-    return finalHint
-end
+-- GUI principal
+local blackScreen = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+blackScreen.IgnoreGuiInset = true
+blackScreen.ResetOnSpawn = false
+blackScreen.Name = "JohnDoeCinematic"
 
--- Mostrar sequência de mensagens
-local h1 = typeHintMessage("Why did this need to happen with me")
-wait(2)
-h1:Destroy()
+-- Tela preta
+local fullBlack = Instance.new("Frame", blackScreen)
+fullBlack.Size = UDim2.new(1, 0, 1, 0)
+fullBlack.BackgroundColor3 = Color3.new(0, 0, 0)
+fullBlack.BorderSizePixel = 0
 
-wait(3)
-local h2 = typeHintMessage("I'm so sorry Jane Doe")
-wait(3)
-h2:Destroy()
+-- Música
+local music = Instance.new("Sound", SoundService)
+music.SoundId = "rbxassetid://75370064485301"
+music.Volume = 1
+music:Play()
 
-local h3 = typeHintMessage("I hope the same thing doesn't happen with Jane Doe")
-wait(3)
-h3:Destroy()
+-- Após 3 segundos
+task.delay(3, function()
+	-- Barras superior e inferior
+	local topBar = Instance.new("Frame", blackScreen)
+	topBar.Size = UDim2.new(1, 0, 0, 0)
+	topBar.Position = UDim2.new(0, 0, 0, 0)
+	topBar.BackgroundColor3 = Color3.new(0, 0, 0)
+	topBar.BorderSizePixel = 0
+	topBar.ZIndex = 2
+
+	local bottomBar = Instance.new("Frame", blackScreen)
+	bottomBar.Size = UDim2.new(1, 0, 0, 0)
+	bottomBar.Position = UDim2.new(0, 0, 1, 0)
+	bottomBar.BackgroundColor3 = Color3.new(0, 0, 0)
+	bottomBar.BorderSizePixel = 0
+	bottomBar.ZIndex = 2
+
+	TweenService:Create(topBar, TweenInfo.new(1), {Size = UDim2.new(1, 0, 0.15, 0)}):Play()
+	TweenService:Create(bottomBar, TweenInfo.new(1), {
+		Size = UDim2.new(1, 0, 0.15, 0),
+		Position = UDim2.new(0, 0, 0.85, 0)
+	}):Play()
+
+	-- Esconde tela preta
+	fullBlack:Destroy()
+
+	-- Congelar personagem
+	local char = player.Character
+	if char and char:FindFirstChildOfClass("Humanoid") then
+		char:FindFirstChildOfClass("Humanoid").WalkSpeed = 0
+		char:FindFirstChildOfClass("Humanoid").JumpPower = 0
+	end
+
+	-- Câmera focando no rosto
+	local head = char:FindFirstChild("Head")
+	if head then
+		RunService:BindToRenderStep("LockCamera", Enum.RenderPriority.Camera.Value + 1, function()
+			camera.CFrame = CFrame.new(head.Position + head.CFrame.lookVector * 5, head.Position)
+		end)
+	end
+
+	-- Caixa de fundo com borda
+	local box = Instance.new("Frame", blackScreen)
+	box.Size = UDim2.new(0.6, 0, 0.18, 0)
+	box.Position = UDim2.new(0.2, 0, 0.75, 0)
+	box.BackgroundColor3 = Color3.new(0, 0, 0)
+	box.BorderColor3 = Color3.new(1, 1, 1)
+	box.BorderSizePixel = 3
+	box.ZIndex = 3
+
+	-- Texto "the killer is"
+	local text1 = Instance.new("TextLabel", box)
+	text1.Size = UDim2.new(1, 0, 0.5, 0)
+	text1.Position = UDim2.new(0, 0, 0, 0)
+	text1.BackgroundTransparency = 1
+	text1.Text = "the killer is"
+	text1.TextScaled = true
+	text1.Font = Enum.Font.GothamBlack
+	text1.TextColor3 = Color3.new(1, 1, 1)
+	text1.ZIndex = 4
+
+	-- Texto "JOHN DOE"
+	local text2 = Instance.new("TextLabel", box)
+	text2.Size = UDim2.new(1, 0, 0.5, 0)
+	text2.Position = UDim2.new(0, 0, 0.5, 0)
+	text2.BackgroundTransparency = 1
+	text2.Text = "JOHN DOE"
+	text2.TextScaled = true
+	text2.Font = Enum.Font.GothamBlack
+	text2.TextColor3 = Color3.new(1, 0, 0)
+	text2.ZIndex = 4
+end)
+
+-- Quando a música terminar, limpa tudo
+music.Ended:Connect(function()
+	local gui = player:FindFirstChild("PlayerGui"):FindFirstChild("JohnDoeCinematic")
+	if gui then gui:Destroy() end
+	RunService:UnbindFromRenderStep("LockCamera")
+	if player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
+		player.Character:FindFirstChildOfClass("Humanoid").WalkSpeed = 16
+		player.Character:FindFirstChildOfClass("Humanoid").JumpPower = 50
+	end
+end)
 
 -- Mostrar "I'M FREE FINALLY" quando morrer
 local player = game.Players.LocalPlayer
@@ -380,12 +459,14 @@ eff3.Texture = "rbxasset://textures/particles/fire_main.dds"
 eff3.Acceleration = Vector3.new(0,10,0)
 eff3.Color = ColorSequence.new(Color3.new(0,0,1))
 
+wait(5)
+
 --Sounds--
 slashsnd = New("Sound",chara.Torso,"Slash",{SoundId = "rbxassetid://0",PlaybackSpeed = .7,Volume = 5})
 hitsnd = New("Sound",chara.Torso,"Hit",{SoundId = "rbxassetid://429400881",PlaybackSpeed = .7,Volume = 5})
 telesnd = New("Sound",chara.Torso,"Tele",{SoundId = "rbxassetid://2767090",PlaybackSpeed = .7,Volume = 5})
 burnsnd = New("Sound",chara.Torso,"Burn",{SoundId = "rbxassetid://32791565",PlaybackSpeed = .7,Volume = 5})
-music1 = New("Sound",chara.Torso,"Music1",{SoundId = "rbxassetid://1848354536",PlaybackSpeed = .9,Volume = 10,Looped = true})
+music1 = New("Sound",chara.Torso,"Music1",{SoundId = "rbxassetid://1843513001",PlaybackSpeed = 1,Volume = 10,Looped = true})
 music2 = New("Sound",chara.Torso,"Music2",{SoundId = "rbxassetid://11984351",PlaybackSpeed = .2,Volume = 5,Looped = true})
 deathmus = New("Sound",chara.Torso,"DeathMus",{SoundId = "rbxassetid://19094700",PlaybackSpeed = .2,Volume = 9,Looped = true})
 deathex = New("Sound",chara.Torso,"DeathEx",{SoundId = "rbxassetid://11984351",PlaybackSpeed = 1,Volume = 5})
@@ -895,4 +976,3 @@ game:GetService("UserInputService").InputBegan:Connect(function(input, gameProce
         removeAllESP()
     end
 end)
-
